@@ -107,14 +107,14 @@ Tech Stack
 - Modern browser (2021+)
 
 🤝 Use Cases
-### 📝 Personal message board - Keep notes and thoughts
-### 👥 Team collaboration - Share file for local team chat
-### 🎉 Event coordination - Live event messaging
-### 💼 Customer support - Simple support chat interface
-### 🎓 Learning tool - Study JavaScript and localStorage
-### 🌐 Embedded chat - Add to your website via iframe
-### ✈️ Offline messaging - Works without internet
-### 🚀 Deployment Options
+- 📝 Personal message board - Keep notes and thoughts
+- 👥 Team collaboration - Share file for local team chat
+- 🎉 Event coordination - Live event messaging
+- 💼 Customer support - Simple support chat interface
+- 🎓 Learning tool - Study JavaScript and localStorage
+- 🌐 Embedded chat - Add to your website via iframe
+- ✈️ Offline messaging - Works without internet
+- 🚀 Deployment Options
 
 ## 🔒 Privacy & Security
 - ✅ 100% client-side - No backend servers
