@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Real-Time Chat Application</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .message-appear {
+      animation: fadeIn 0.3s ease-out;
+    }
+    
+    .chat-scroll {
+      scroll-behavior: smooth;
+    }
+
+    .settings-panel {
+      position: fixed;
+      top: 0;
+      right: -400px;
+      width: 400px;
+      height: 100%;
+      background: white;
+      box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+      transition: right 0.3s ease;
+      z-index: 1000;
+      overflow-y: auto;
+    }
+
+    .settings-panel.open {
+      right: 0;
+    }
+
+    .settings-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+      display: none;
+    }
+
+    .settings-overlay.active {
+      display: block;
+    }
+
+    @media (max-width: 640px) {
+      .settings-panel {
+        width: 100%;
+        right: -100%;
+      }
+    }
+  </style>
+</head>
+<body class="h-full">
+  <div id="app" class="h-full w-full flex flex-col overflow-auto">
+    <!-- Chat Header -->
+    <header id="chat-header" class="px-6 py-4 border-b-2 shadow-sm flex justify-between items-center">
+      <div>
+        <h1 id="app-title" class="text-2xl font-bold mb-1">💬 Real-Time Chat</h1>
+        <p id="welcome-message" class="text-sm opacity-80">Connect and chat with others in real-time</p>
+      </div>
+      <div class="flex gap-2">
+        <button id="export-btn" class="px-3 py-2 rounded-lg font-semibold text-sm transition-all hover:opacity-80" title="Export chat"> 📥 Export </button>
+        <button id="import-btn" class="px-3 py-2 rounded-lg font-semibold text-sm transition-all hover:opacity-80" title="Import chat"> 📤 Import </button>
+        <button id="settings-btn" class="px-3 py-2 rounded-lg font-semibold text-sm transition-all hover:opacity-80" title="Settings"> ⚙️ </button>
+      </div>
+      <input type="file" id="import-file" accept=".json" style="display: none;">
+    </header>
+
+    <!-- Messages Container -->
+    <main id="messages-container" class="flex-1 px-6 py-4 overflow-y-auto chat-scroll">
+      <div id="messages-list" class="space-y-3 max-w-4xl mx-auto">
+        <!-- Messages will be inserted here -->
+      </div>
+    </main>
+
+    <!-- Input Area -->
+    <footer id="input-area" class="border-t-2 px-6 py-4">
+      <form id="chat-form" class="max-w-4xl mx-auto">
+        <div class="flex gap-3 flex-wrap sm:flex-nowrap">
+          <label for="username-input" class="sr-only">Your Name</label>
+          <input type="text" id="username-input" placeholder="Your name" class="px-4 py-3 rounded-lg border-2 focus:outline-none focus:ring-2 w-full sm:w-32 transition-all" required maxlength="20">
+          <label for="message-input" class="sr-only">Type your message</label>
+          <input type="text" id="message-input" placeholder="Type your message..." class="flex-1 px-4 py-3 rounded-lg border-2 focus:outline-none focus:ring-2 transition-all min-w-0" required maxlength="500">
+          <button type="submit" id="send-button" class="px-6 py-3 rounded-lg font-semibold transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"> Send </button>
+        </div>
+        <div id="char-counter" class="text-xs text-right mt-2 opacity-70">
+          0/500 characters
+        </div>
+      </form>
+    </footer>
+  </div>
+
+  <!-- Settings Overlay -->
+  <div id="settings-overlay" class="settings-overlay"></div>
+
+  <!-- Settings Panel -->
+  <aside id="settings-panel" class="settings-panel">
+    <div class="p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-bold">Settings</h2>
+        <button id="close-settings" class="text-2xl hover:opacity-70">×</button>
+      </div>
+
+      <!-- Appearance Settings -->
+      <section class="mb-6">
+        <h3 class="text-lg font-semibold mb-3">Appearance</h3>
+        <div class="mb-4">
+          <label for="title-input" class="block text-sm font-medium mb-2">Chat Title</label>
+          <input type="text" id="title-input" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2" maxlength="50">
+        </div>
+        <div class="mb-4">
+          <label for="welcome-input" class="block text-sm font-medium mb-2">Welcome Message</label>
+          <input type="text" id="welcome-input" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2" maxlength="100">
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-medium mb-2">Theme Presets</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button class="theme-btn px-3 py-2 rounded-lg border-2 text-sm font-medium hover:shadow" data-theme="blue">Blue Ocean</button>
+            <button class="theme-btn px-3 py-2 rounded-lg border-2 text-sm font-medium hover:shadow" data-theme="dark">Dark Mode</button>
+            <button class="theme-btn px-3 py-2 rounded-lg border-2 text-sm font-medium hover:shadow" data-theme="sunset">Sunset</button>
+            <button class="theme-btn px-3 py-2 rounded-lg border-2 text-sm font-medium hover:shadow" data-theme="forest">Forest</button>
+          </div>
+        </div>
+        <div class="mb-4">
+          <label for="font-select" class="block text-sm font-medium mb-2">Font Family</label>
+          <select id="font-select" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2">
+            <option value="system-ui">System Default</option>
+            <option value="Arial">Arial</option>
+            <option value="Helvetica">Helvetica</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Courier New">Courier New</option>
+            <option value="Verdana">Verdana</option>
+          </select>
+        </div>
+        <div class="mb-4">
+          <label for="font-size-input" class="block text-sm font-medium mb-2">Font Size: <span id="font-size-display">16</span>px</label>
+          <input type="range" id="font-size-input" min="12" max="24" step="1" class="w-full">
+        </div>
+      </section>
+
+      <!-- Data Management -->
+      <section class="mb-6">
+        <h3 class="text-lg font-semibold mb-3">Data Management</h3>
+        <button id="clear-all-btn" class="w-full px-4 py-2 rounded-lg font-semibold bg-red-500 text-white hover:bg-red-600 transition-all"> Clear All Messages </button>
+        <p class="text-xs mt-2 opacity-70">This will permanently delete all chat messages</p>
+      </section>
+
+      <!-- Save Settings Button -->
+      <button id="save-settings-btn" class="w-full px-4 py-3 rounded-lg font-semibold text-white transition-all hover:shadow-lg"> Save Settings </button>
+    </div>
+  </aside>
+
+  <script>
+    // Configuration
+    const defaultConfig = {
+      background_color: "#f0f4f8",
+      surface_color: "#ffffff",
+      text_color: "#1a202c",
+      primary_action_color: "#3b82f6",
+      secondary_action_color: "#64748b",
+      app_title: "💬 Real-Time Chat",
+      welcome_message: "Connect and chat with others in real-time",
+      font_family: "system-ui",
+      font_size: 16
+    };
+
+    const themes = {
+      blue: {
+        background_color: "#f0f4f8",
+        surface_color: "#ffffff",
+        text_color: "#1a202c",
+        primary_action_color: "#3b82f6",
+        secondary_action_color: "#64748b"
+      },
+      dark: {
+        background_color: "#1a202c",
+        surface_color: "#2d3748",
+        text_color: "#f7fafc",
+        primary_action_color: "#4299e1",
+        secondary_action_color: "#718096"
+      },
+      sunset: {
+        background_color: "#fff5f7",
+        surface_color: "#ffffff",
+        text_color: "#742a2a",
+        primary_action_color: "#f56565",
+        secondary_action_color: "#fc8181"
+      },
+      forest: {
+        background_color: "#f0fff4",
+        surface_color: "#ffffff",
+        text_color: "#22543d",
+        primary_action_color: "#48bb78",
+        secondary_action_color: "#68d391"
+      }
+    };
+
+    // Load config from localStorage
+    let config = { ...defaultConfig, ...JSON.parse(localStorage.getItem('chatConfig') || '{}') };
+
+    // Load messages from localStorage
+    let allMessages = JSON.parse(localStorage.getItem('chatMessages') || '[]');
+
+    // Save config to localStorage
+    function saveConfig() {
+      localStorage.setItem('chatConfig', JSON.stringify(config));
+    }
+
+    // Save messages to localStorage
+    function saveMessages() {
+      localStorage.setItem('chatMessages', JSON.stringify(allMessages));
+    }
+
+    // Apply theme
+    function applyTheme() {
+      const backgroundColor = config.background_color;
+      const surfaceColor = config.surface_color;
+      const textColor = config.text_color;
+      const primaryColor = config.primary_action_color;
+      const secondaryColor = config.secondary_action_color;
+      const customFont = config.font_family;
+      const baseSize = config.font_size;
+      const fontStack = `${customFont}, system-ui, -apple-system, sans-serif`;
+
+      // Apply to document body
+      document.body.style.backgroundColor = backgroundColor;
+      document.body.style.fontFamily = fontStack;
+      document.body.style.color = textColor;
+
+      // Apply to main app container
+      const app = document.getElementById('app');
+      app.style.backgroundColor = backgroundColor;
+
+      // Apply header styling
+      const header = document.getElementById('chat-header');
+      header.style.backgroundColor = surfaceColor;
+      header.style.borderBottomColor = secondaryColor;
+      header.style.color = textColor;
+
+      // Apply buttons in header
+      const headerButtons = [document.getElementById('export-btn'), document.getElementById('import-btn'), document.getElementById('settings-btn')];
+      headerButtons.forEach(btn => {
+        if (btn) {
+          btn.style.backgroundColor = primaryColor;
+          btn.style.color = surfaceColor;
+          btn.style.fontFamily = fontStack;
+        }
+      });
+
+      // Apply title and welcome message
+      const title = document.getElementById('app-title');
+      title.textContent = config.app_title;
+      title.style.fontFamily = fontStack;
+      title.style.fontSize = `${baseSize * 1.5}px`;
+      title.style.color = textColor;
+
+      const welcomeMsg = document.getElementById('welcome-message');
+      welcomeMsg.textContent = config.welcome_message;
+      welcomeMsg.style.fontFamily = fontStack;
+      welcomeMsg.style.fontSize = `${baseSize * 0.875}px`;
+      welcomeMsg.style.color = textColor;
+
+      // Apply input area styling
+      const inputArea = document.getElementById('input-area');
+      inputArea.style.backgroundColor = surfaceColor;
+      inputArea.style.borderTopColor = secondaryColor;
+
+      const usernameInput = document.getElementById('username-input');
+      const messageInput = document.getElementById('message-input');
+      [usernameInput, messageInput].forEach(input => {
+        input.style.fontFamily = fontStack;
+        input.style.fontSize = `${baseSize}px`;
+        input.style.backgroundColor = surfaceColor;
+        input.style.color = textColor;
+        input.style.borderColor = secondaryColor;
+      });
+
+      // Apply button styling
+      const sendButton = document.getElementById('send-button');
+      sendButton.style.backgroundColor = primaryColor;
+      sendButton.style.color = surfaceColor;
+      sendButton.style.fontFamily = fontStack;
+      sendButton.style.fontSize = `${baseSize}px`;
+
+      // Apply char counter styling
+      const charCounter = document.getElementById('char-counter');
+      charCounter.style.fontFamily = fontStack;
+      charCounter.style.fontSize = `${baseSize * 0.75}px`;
+      charCounter.style.color = textColor;
+
+      // Apply settings panel styling
+      const settingsPanel = document.getElementById('settings-panel');
+      settingsPanel.style.backgroundColor = surfaceColor;
+      settingsPanel.style.color = textColor;
+
+      // Apply save button in settings
+      const saveSettingsBtn = document.getElementById('save-settings-btn');
+      saveSettingsBtn.style.backgroundColor = primaryColor;
+      saveSettingsBtn.style.fontFamily = fontStack;
+
+      // Re-render messages
+      renderMessages();
+    }
+
+    // Render messages
+    function renderMessages() {
+      const messagesList = document.getElementById('messages-list');
+      const surfaceColor = config.surface_color;
+      const textColor = config.text_color;
+      const secondaryColor = config.secondary_action_color;
+      const customFont = config.font_family;
+      const baseSize = config.font_size;
+      const fontStack = `${customFont}, system-ui, -apple-system, sans-serif`;
+
+      // Clear and rebuild
+      messagesList.innerHTML = '';
+
+      allMessages.forEach(msg => {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message-appear p-4 rounded-lg shadow-sm';
+        messageDiv.style.backgroundColor = surfaceColor;
+        messageDiv.style.borderLeft = `4px solid ${secondaryColor}`;
+
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'flex justify-between items-center mb-2';
+
+        const usernameSpan = document.createElement('span');
+        usernameSpan.className = 'font-semibold';
+        usernameSpan.textContent = msg.username;
+        usernameSpan.style.color = textColor;
+        usernameSpan.style.fontFamily = fontStack;
+        usernameSpan.style.fontSize = `${baseSize * 0.9375}px`;
+
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'text-xs opacity-70';
+        const date = new Date(msg.timestamp);
+        timeSpan.textContent = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        timeSpan.style.color = textColor;
+        timeSpan.style.fontFamily = fontStack;
+        timeSpan.style.fontSize = `${baseSize * 0.75}px`;
+
+        headerDiv.appendChild(usernameSpan);
+        headerDiv.appendChild(timeSpan);
+
+        const messageP = document.createElement('p');
+        messageP.textContent = msg.message;
+        messageP.style.color = textColor;
+        messageP.style.fontFamily = fontStack;
+        messageP.style.fontSize = `${baseSize}px`;
+        messageP.style.wordBreak = 'break-word';
+
+        messageDiv.appendChild(headerDiv);
+        messageDiv.appendChild(messageP);
+        messagesList.appendChild(messageDiv);
+      });
+
+      scrollToBottom();
+    }
+
+    function scrollToBottom() {
+      const container = document.getElementById('messages-container');
+      setTimeout(() => {
+        container.scrollTop = container.scrollHeight;
+      }, 100);
+    }
+
+    // Form handling
+    document.getElementById('chat-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const usernameInput = document.getElementById('username-input');
+      const messageInput = document.getElementById('message-input');
+
+      const username = usernameInput.value.trim();
+      const messageText = messageInput.value.trim();
+
+      if (!username || !messageText) return;
+
+      const newMessage = {
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+        username: username,
+        message: messageText,
+        timestamp: new Date().toISOString()
+      };
+
+      allMessages.push(newMessage);
+      saveMessages();
+      renderMessages();
+
+      messageInput.value = '';
+      updateCharCounter();
+      messageInput.focus();
+    });
+
+    // Character counter
+    function updateCharCounter() {
+      const messageInput = document.getElementById('message-input');
+      const counter = document.getElementById('char-counter');
+      counter.textContent = `${messageInput.value.length}/500 characters`;
+    }
+
+    document.getElementById('message-input').addEventListener('input', updateCharCounter);
+
+    // Settings panel
+    document.getElementById('settings-btn').addEventListener('click', () => {
+      document.getElementById('settings-panel').classList.add('open');
+      document.getElementById('settings-overlay').classList.add('active');
+      
+      // Populate settings
+      document.getElementById('title-input').value = config.app_title;
+      document.getElementById('welcome-input').value = config.welcome_message;
+      document.getElementById('font-select').value = config.font_family;
+      document.getElementById('font-size-input').value = config.font_size;
+      document.getElementById('font-size-display').textContent = config.font_size;
+    });
+
+    function closeSettings() {
+      document.getElementById('settings-panel').classList.remove('open');
+      document.getElementById('settings-overlay').classList.remove('active');
+    }
+
+    document.getElementById('close-settings').addEventListener('click', closeSettings);
+    document.getElementById('settings-overlay').addEventListener('click', closeSettings);
+
+    // Font size slider
+    document.getElementById('font-size-input').addEventListener('input', (e) => {
+      document.getElementById('font-size-display').textContent = e.target.value;
+    });
+
+    // Theme buttons
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const theme = themes[btn.dataset.theme];
+        Object.assign(config, theme);
+        applyTheme();
+      });
+    });
+
+    // Save settings
+    document.getElementById('save-settings-btn').addEventListener('click', () => {
+      config.app_title = document.getElementById('title-input').value;
+      config.welcome_message = document.getElementById('welcome-input').value;
+      config.font_family = document.getElementById('font-select').value;
+      config.font_size = parseInt(document.getElementById('font-size-input').value);
+      
+      saveConfig();
+      applyTheme();
+      closeSettings();
+      
+      showToast('Settings saved successfully!');
+    });
+
+    // Clear all messages
+    document.getElementById('clear-all-btn').addEventListener('click', () => {
+      if (confirm('Are you sure you want to delete all messages? This cannot be undone.')) {
+        allMessages = [];
+        saveMessages();
+        renderMessages();
+        showToast('All messages cleared');
+      }
+    });
+
+    // Export chat
+    document.getElementById('export-btn').addEventListener('click', () => {
+      const data = {
+        config: config,
+        messages: allMessages,
+        exportDate: new Date().toISOString()
+      };
+      
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `chat-export-${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      showToast('Chat exported successfully!');
+    });
+
+    // Import chat
+    document.getElementById('import-btn').addEventListener('click', () => {
+      document.getElementById('import-file').click();
+    });
+
+    document.getElementById('import-file').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const data = JSON.parse(event.target.result);
+          
+          if (data.config) {
+            config = { ...defaultConfig, ...data.config };
+            saveConfig();
+          }
+          
+          if (data.messages && Array.isArray(data.messages)) {
+            allMessages = data.messages;
+            saveMessages();
+          }
+          
+          applyTheme();
+          showToast('Chat imported successfully!');
+        } catch (error) {
+          showToast('Error importing chat. Invalid file format.');
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    });
+
+    // Toast notification
+    function showToast(message) {
+      const toast = document.createElement('div');
+      toast.textContent = message;
+      toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: ${config.primary_action_color};
+        color: ${config.surface_color};
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-family: ${config.font_family}, system-ui, sans-serif;
+        font-size: ${config.font_size}px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 10000;
+        animation: fadeIn 0.3s ease-out;
+      `;
+      document.body.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        toast.style.transition = 'all 0.3s ease-out';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // Initialize
+    applyTheme();
+    renderMessages();
+
+    // Load saved username
+    const savedUsername = localStorage.getItem('chatUsername');
+    if (savedUsername) {
+      document.getElementById('username-input').value = savedUsername;
+    }
+
+    // Save username on change
+    document.getElementById('username-input').addEventListener('change', (e) => {
+      localStorage.setItem('chatUsername', e.target.value);
+    });
+
+    // Initial character counter update
+    updateCharCounter();
+  </script>
+</body>
+</html>
