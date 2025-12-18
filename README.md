@@ -34,7 +34,7 @@ A beautiful, functional chat application built with vanilla JavaScript and Tailw
 1. Fork this repository
 2. Go to **Settings** → **Pages**
 3. Select your `main` branch as source
-4. Visit `https://yourusername.github.io/repo-name/chat-app.html`
+4. Visit `https://elagiaunified.github.io/php-chat-app/index.html`
 
 ### Option 3: Embed in Your Website
 
