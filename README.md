@@ -26,7 +26,7 @@ A beautiful, functional chat application built with vanilla JavaScript and Tailw
 ## 🚀 Quick Start
 
 ### Option 1: Direct Usage (Easiest)
-1. Download the `chat-app.html` file
+1. Download the `index.html` file
 2. Double-click to open in any modern web browser
 3. Start chatting immediately!
 
@@ -36,13 +36,7 @@ A beautiful, functional chat application built with vanilla JavaScript and Tailw
 3. Select your `main` branch as source
 4. Visit `https://yourusername.github.io/repo-name/chat-app.html`
 
-### Option 3: Deploy to Netlify
-1. Drag and drop `chat-app.html` to [Netlify Drop](https://app.netlify.com/drop)
-2. Get instant live URL
-3. Share with anyone!
-
-### Option 4: Embed in Your Website
-
+### Option 3: Embed in Your Website
 
 ## 📋 How to Use
 
