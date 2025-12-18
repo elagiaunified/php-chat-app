@@ -30,13 +30,9 @@ A beautiful, functional chat application built with vanilla JavaScript and Tailw
 2. Double-click to open in any modern web browser
 3. Start chatting immediately!
 
-### Option 2: Host on GitHub Pages
-1. Fork this repository
-2. Go to **Settings** → **Pages**
-3. Select your `main` branch as source
-4. Visit `https://elagiaunified.github.io/php-chat-app/index.html`
+### Option 2: Embed in Your Website
 
-### Option 3: Embed in Your Website
+## [Live Demo](https://elagiaunified.github.io/php-chat-app/) 
 
 ## 📋 How to Use
 
